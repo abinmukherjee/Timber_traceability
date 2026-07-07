@@ -21,3 +21,16 @@ qr-codes/
 # OS
 .DS_Store
 Thumbs.db
+
+# Not needed for deployment (dev tooling / docs / unused)
+.deps/
+contracts/
+artifacts/
+frontend-legacy/
+latex_template/
+.claude/
+.vscode/
+PROJECT_DOCUMENTATION.md
+README.md
+package.json
+package-lock.json
