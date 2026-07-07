@@ -22,6 +22,7 @@ const { ethers } = require("ethers");
 const axios      = require("axios");
 const fs         = require("fs");
 const path       = require("path");
+const http       = require("http");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -213,4 +214,16 @@ function startListener() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 console.log("🌲 Timber Supply Chain Event Listener — starting...");
+
+// Render's free "Web Service" plan requires binding to $PORT and responding
+// to HTTP — this listener has no real HTTP API, so this server exists purely
+// to satisfy that health check. It carries no application logic.
+const PORT = process.env.PORT || 3000;
+http.createServer((_req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Timber listener is running\n");
+}).listen(PORT, () => {
+  console.log(`🌐 Health-check HTTP server listening on port ${PORT}`);
+});
+
 startListener();

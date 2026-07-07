@@ -28,12 +28,13 @@ services:
       - key: QR_OUTPUT_DIR
         value: /app/qr-codes
 
-  - type: worker
+  - type: web
     name: timber-listener
     runtime: docker
     dockerfilePath: ./listener/Dockerfile
     dockerContext: ./listener
     plan: free
+    healthCheckPath: /
     envVars:
       - key: SEPOLIA_WS_URL
         sync: false
