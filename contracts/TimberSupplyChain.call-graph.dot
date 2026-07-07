@@ -1,0 +1,84 @@
+strict digraph {
+rankdir="LR"
+node [shape=box]
+subgraph cluster_295_AccessControl {
+label = "AccessControl"
+"295__revokeRole" [label="_revokeRole"]
+"295__checkRole" [label="_checkRole"]
+"295_supportsInterface" [label="supportsInterface"]
+"295__setRoleAdmin" [label="_setRoleAdmin"]
+"295_renounceRole" [label="renounceRole"]
+"295_grantRole" [label="grantRole"]
+"295__grantRole" [label="_grantRole"]
+"295_revokeRole" [label="revokeRole"]
+"295_getRoleAdmin" [label="getRoleAdmin"]
+"295_hasRole" [label="hasRole"]
+"295__checkRole" -> "295_hasRole"
+"295_grantRole" -> "295_onlyRole"
+"295_renounceRole" -> "295__msgSender"
+"295__checkRole" -> "295__checkRole"
+"295__grantRole" -> "295_hasRole"
+"295_revokeRole" -> "295_onlyRole"
+"295_revokeRole" -> "295__revokeRole"
+"295__grantRole" -> "295__msgSender"
+"295_grantRole" -> "295_getRoleAdmin"
+"295_revokeRole" -> "295_getRoleAdmin"
+"295__setRoleAdmin" -> "295_getRoleAdmin"
+"295__revokeRole" -> "295_hasRole"
+"295__checkRole" -> "295__msgSender"
+"295_supportsInterface" -> "295_supportsInterface"
+"295__revokeRole" -> "295__msgSender"
+"295_renounceRole" -> "295__revokeRole"
+"295_grantRole" -> "295__grantRole"
+}subgraph cluster_860_TimberSupplyChain {
+label = "TimberSupplyChain"
+"860_getFurniture" [label="getFurniture"]
+"860_getFurnitureCount" [label="getFurnitureCount"]
+"860_getLotCount" [label="getLotCount"]
+"860_constructor" [label="constructor"]
+"860_getBatchCount" [label="getBatchCount"]
+"860_getLot" [label="getLot"]
+"860_createFurniture" [label="createFurniture"]
+"860_slitherConstructorConstantVariables" [label="slitherConstructorConstantVariables"]
+"860_getBatch" [label="getBatch"]
+"860_purchaseWood" [label="purchaseWood"]
+"860_registerLot" [label="registerLot"]
+"860_constructor" -> "860__grantRole"
+"860_createFurniture" -> "860_onlyRole"
+"860_registerLot" -> "860_onlyRole"
+"860_purchaseWood" -> "860_onlyRole"
+}subgraph cluster_432_ERC165 {
+label = "ERC165"
+"432_supportsInterface" [label="supportsInterface"]
+}subgraph cluster_408_Context {
+label = "Context"
+"408__msgData" [label="_msgData"]
+"408__msgSender" [label="_msgSender"]
+"408__contextSuffixLength" [label="_contextSuffixLength"]
+}subgraph cluster_378_IAccessControl {
+label = "IAccessControl"
+"378_hasRole" [label="hasRole"]
+"378_renounceRole" [label="renounceRole"]
+"378_grantRole" [label="grantRole"]
+"378_revokeRole" [label="revokeRole"]
+"378_getRoleAdmin" [label="getRoleAdmin"]
+}subgraph cluster_444_IERC165 {
+label = "IERC165"
+"444_supportsInterface" [label="supportsInterface"]
+}subgraph cluster_solidity {
+label = "[Solidity]"
+"keccak256(bytes)" 
+"revert AccessControlUnauthorizedAccount(address,bytes32)" 
+"require(bool,string)" 
+"type()" 
+"revert AccessControlBadConfirmation()" 
+"295__checkRole" -> "revert AccessControlUnauthorizedAccount(address,bytes32)"
+"432_supportsInterface" -> "type()"
+"860_createFurniture" -> "require(bool,string)"
+"860_purchaseWood" -> "require(bool,string)"
+"295_renounceRole" -> "revert AccessControlBadConfirmation()"
+"860_registerLot" -> "require(bool,string)"
+"295_supportsInterface" -> "type()"
+"860_slitherConstructorConstantVariables" -> "keccak256(bytes)"
+}
+}

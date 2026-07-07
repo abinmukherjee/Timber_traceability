@@ -1,0 +1,43 @@
+databases:
+  - name: timber-postgres
+    plan: free
+    databaseName: timber_db
+    user: postgres
+
+services:
+  - type: web
+    name: timber-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: CONTRACT_ADDRESS
+        sync: false
+      - key: PINATA_JWT
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: QR_OUTPUT_DIR
+        value: /app/qr-codes
+
+  - type: worker
+    name: timber-listener
+    runtime: docker
+    dockerfilePath: ./listener/Dockerfile
+    dockerContext: ./listener
+    plan: free
+    envVars:
+      - key: SEPOLIA_WS_URL
+        sync: false
+      - key: CONTRACT_ADDRESS
+        sync: false
+      - key: BACKEND_URL
+        sync: false

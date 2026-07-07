@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-mist text-ink font-sans antialiased;
+  }
+  /* Apple-style focus ring */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.35);
+    border-radius: 8px;
+  }
+}
+
+@layer components {
+  /* Frosted panel used by nav + banners */
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .card {
+    @apply bg-canvas border border-hairline rounded-apple shadow-card transition-all duration-300;
+  }
+  .card-hover:hover {
+    @apply shadow-cardHover -translate-y-0.5 border-hairline;
+  }
+}

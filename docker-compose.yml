@@ -1,0 +1,63 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: timber_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d timber_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/timber_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
+      PINATA_JWT: ${PINATA_JWT}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5500}
+      QR_OUTPUT_DIR: /app/qr-codes
+    volumes:
+      - qrcodes:/app/qr-codes
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  listener:
+    build: ./listener
+    environment:
+      SEPOLIA_WS_URL: ${SEPOLIA_WS_URL}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
+      BACKEND_URL: http://backend:8080
+    volumes:
+      - ./contract-config.json:/contract-config.json:ro
+    depends_on:
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Point the built app at the backend. Override for non-localhost deploys.
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:8080}
+    ports:
+      - "5500:80"
+    volumes:
+      # Mount the live contract config so redeploying to a new address only
+      # requires swapping this file — no frontend image rebuild.
+      - ./contract-config.json:/usr/share/nginx/html/contract-config.json:ro
+
+volumes:
+  pgdata:
+  qrcodes:

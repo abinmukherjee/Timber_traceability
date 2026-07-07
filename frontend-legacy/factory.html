@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimberTrace — Factory</title>
+  <meta name="description" content="Factory portal for buying wood lots and manufacturing furniture on the blockchain." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1e; --surface: #111827; --surface2: #1a2235;
+      --border: #1e293b; --accent: #22c55e; --accent2: #3b82f6; --accent3: #f59e0b;
+      --text: #e2e8f0; --muted: #64748b; --danger: #ef4444; --radius: 12px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav { background: rgba(17,24,39,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: var(--accent); text-decoration: none; }
+    .nav-brand span { color: var(--text); }
+    .nav-links { display: flex; gap: 0.25rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; padding: 6px 14px; border-radius: 8px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--accent3); }
+    .chain-badge { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .page-header { padding: 3rem 2rem 0; max-width: 1000px; margin: 0 auto; }
+    .page-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .page-header p { color: var(--muted); }
+    main { max-width: 1000px; margin: 2rem auto; padding: 0 2rem; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; background: var(--surface2); border-radius: 10px; padding: 4px; margin-bottom: 2rem; width: fit-content; }
+    .tab-btn { padding: 0.6rem 1.5rem; border-radius: 7px; border: none; background: transparent; color: var(--muted); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .tab-btn.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+    /* Form */
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem; }
+    .form-card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.9rem; font-family: inherit; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+    select option { background: var(--surface2); }
+
+    /* Info box */
+    .info-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-size: 0.875rem; color: var(--muted); margin-top: 0.5rem; }
+    .info-box strong { color: var(--text); }
+    .info-box.success { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.2); color: #86efac; }
+
+    /* File upload */
+    .file-upload-area { border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+    .file-upload-area:hover { border-color: var(--accent3); background: rgba(245,158,11,0.03); }
+    .file-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .file-upload-area p { color: var(--muted); font-size: 0.875rem; }
+
+    /* IPFS status */
+    .ipfs-status { display: none; align-items: center; gap: 0.75rem; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 0.875rem 1rem; font-size: 0.875rem; margin-top: 0.75rem; }
+    .ipfs-status.show { display: flex; }
+    .ipfs-cid { font-family: monospace; font-size: 0.8rem; color: var(--accent); word-break: break-all; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.875rem 1.75rem; border-radius: 10px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .btn-primary { background: var(--accent3); color: #0a0f1e; }
+    .btn-primary:hover:not(:disabled) { background: #d97706; transform: translateY(-1px); }
+    .btn-primary.blue { background: var(--accent2); color: white; }
+    .btn-primary.blue:hover:not(:disabled) { background: #2563eb; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent3); color: var(--accent3); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-connect { background: var(--accent2); color: white; }
+    .btn-connect:hover { background: #2563eb; }
+    .btn-connect.connected { background: rgba(34,197,94,0.15); color: var(--accent); border: 1px solid rgba(34,197,94,0.3); }
+
+    /* Status */
+    .status-msg { display: none; padding: 1rem 1.25rem; border-radius: 8px; font-size: 0.875rem; margin-top: 1rem; }
+    .status-msg.show { display: block; }
+    .status-msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+    .status-msg.error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
+    .status-msg.loading { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; }
+
+    .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .pill-blue  { background: rgba(59,130,246,0.1); color: #60a5fa; }
+    .pill-amber { background: rgba(245,158,11,0.1); color: #fbbf24; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">🌲 <span>TimberTrace</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="auction.html">Auction House</a>
+    <a href="factory.html" class="active">Factory</a>
+    <a href="verify.html">Verify</a>
+    <a href="admin.html">Admin</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <span class="chain-badge">⬡ Sepolia</span>
+    <button class="btn btn-connect" id="connect-btn" onclick="handleConnect()">Connect Wallet</button>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>🏭 Factory Portal</h1>
+  <p>Buy wood from registered lots or manufacture furniture from your batches. Requires <strong>FACTORY_ROLE</strong>.</p>
+</div>
+
+<main>
+  <div id="wallet-error" class="status-msg error"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-buy" onclick="switchTab('buy')">🪵 Buy Wood</button>
+    <button class="tab-btn"        id="tab-make" onclick="switchTab('make')">🛏️ Create Furniture</button>
+  </div>
+
+  <!-- ── Tab 1: Buy Wood ───────────────────────────────────── -->
+  <div id="panel-buy">
+    <div class="form-card">
+      <h2>🪵 Purchase Wood from a Lot</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="lot-id">Lot ID</label>
+          <input id="lot-id" type="number" min="1" placeholder="e.g. 1" oninput="fetchLotInfo()" />
+        </div>
+        <div class="form-group">
+          <label for="buy-qty">Quantity to Buy (cft)</label>
+          <input id="buy-qty" type="number" min="1" placeholder="e.g. 100" />
+        </div>
+        <div class="form-group full">
+          <div class="info-box" id="lot-info">Enter a Lot ID above to see its details.</div>
+        </div>
+      </div>
+      <div style="margin-top: 1.5rem;">
+        <button class="btn btn-primary" id="buy-btn" onclick="buyWood()">🔗 Buy Wood (MetaMask)</button>
+      </div>
+      <div class="status-msg" id="buy-status"></div>
+    </div>
+  </div>
+
+  <!-- ── Tab 2: Create Furniture ──────────────────────────── -->
+  <div id="panel-make" style="display:none;">
+    <div class="form-card">
+      <h2>🛏️ Create Furniture from a Batch</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="batch-id">Batch ID</label>
+          <input id="batch-id" type="number" min="1" placeholder="e.g. 1" oninput="fetchBatchInfo()" />
+        </div>
+        <div class="form-group">
+          <label for="furn-type">Furniture Type</label>
+          <select id="furn-type">
+            <option>Bed</option>
+            <option>Chair</option>
+            <option>Table</option>
+            <option>Sofa</option>
+            <option>Cabinet</option>
+            <option>Wardrobe</option>
+            <option>Desk</option>
+            <option>Bookshelf</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="furn-qty">Wood Used (cft)</label>
+          <input id="furn-qty" type="number" min="1" placeholder="e.g. 40" />
+        </div>
+        <div class="form-group">
+          <div class="info-box" id="batch-info" style="height:100%;align-content:center;">Enter a Batch ID to see details.</div>
+        </div>
+
+        <!-- IPFS upload — required for furniture -->
+        <div class="form-group full">
+          <label>Product Certificate / Image <span style="color:var(--accent3)">(Required — uploaded to IPFS)</span></label>
+          <div class="file-upload-area">
+            <input type="file" id="furn-file" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFurnFile(this)" />
+            <div style="font-size:1.5rem;margin-bottom:0.5rem;">🖼️</div>
+            <p>Select a product certificate or image</p>
+            <p style="color:var(--accent3);font-weight:500;margin-top:0.5rem;" id="furn-file-name"></p>
+          </div>
+        </div>
+
+        <div class="form-group full" id="furn-jwt-section" style="display:none;">
+          <label for="furn-pinata-jwt">Pinata JWT</label>
+          <input id="furn-pinata-jwt" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+
+        <div class="form-group full">
+          <div class="ipfs-status" id="furn-ipfs-status">
+            ✅ <div>Uploaded — CID: <span class="ipfs-cid" id="furn-ipfs-cid"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem; display:flex; gap:1rem; flex-wrap:wrap;">
+        <button class="btn btn-outline" id="furn-upload-btn" onclick="uploadFurnFile()" style="display:none;">📤 Upload to IPFS First</button>
+        <button class="btn btn-primary" id="make-btn" onclick="createFurniture()">🔗 Create Furniture (MetaMask)</button>
+      </div>
+      <div class="status-msg" id="make-status"></div>
+    </div>
+
+    <!-- My Batches -->
+    <div style="margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between;">
+      <h2 style="font-size:1rem; font-weight:700;">My Batches</h2>
+      <button class="btn btn-outline" onclick="loadMyBatches()" style="padding:6px 14px; font-size:0.8rem;">↻ Refresh</button>
+    </div>
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead style="background:var(--surface2);">
+          <tr>
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Batch #</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Parent Lot</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Qty (cft)</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Remaining (cft)</th>
+            <th style="padding:0.75rem 1rem;text-align:left;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Use</th>
+          </tr>
+        </thead>
+        <tbody id="batches-tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Connect wallet to see your batches.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script src="js/contract-config.js"></script>
+<script src="js/wallet.js"></script>
+<script src="js/api.js"></script>
+<script>
+  let walletData = null;
+  let furnFile = null;
+  let furnCID  = '';
+
+  async function handleConnect() {
+    walletData = await connectWallet();
+    if (walletData) {
+      document.getElementById('connect-btn').textContent = '✓ ' + shortenAddress(walletData.address);
+      document.getElementById('connect-btn').classList.add('connected');
+      loadMyBatches();
+    }
+  }
+
+  function switchTab(tab) {
+    document.getElementById('panel-buy').style.display  = tab === 'buy'  ? '' : 'none';
+    document.getElementById('panel-make').style.display = tab === 'make' ? '' : 'none';
+    document.getElementById('tab-buy').classList.toggle('active',  tab === 'buy');
+    document.getElementById('tab-make').classList.toggle('active', tab === 'make');
+    if (tab === 'make' && walletData) loadMyBatches();
+  }
+
+  async function fetchLotInfo() {
+    const id = document.getElementById('lot-id').value;
+    if (!id) return;
+    try {
+      const lot = await apiGetLot(id);
+      document.getElementById('lot-info').innerHTML =
+        `<strong>Species:</strong> ${lot.species || '—'} &nbsp;|&nbsp;
+         <strong>Grade:</strong> ${lot.grade || '—'} &nbsp;|&nbsp;
+         <strong>Remaining:</strong> <span style="color:var(--accent);font-weight:700;">${lot.remainingQty} cft</span>`;
+      document.getElementById('lot-info').className = 'info-box success';
+    } catch {
+      document.getElementById('lot-info').textContent = '⚠️ Lot not found or backend offline.';
+      document.getElementById('lot-info').className = 'info-box';
+    }
+  }
+
+  async function fetchBatchInfo() {
+    const id = document.getElementById('batch-id').value;
+    if (!id) return;
+    try {
+      const batch = await apiGetBatch(id);
+      document.getElementById('batch-info').innerHTML =
+        `<strong>Parent Lot:</strong> #${batch.parentLotId} &nbsp;|&nbsp;
+         <strong>Purchased:</strong> ${batch.qty} cft &nbsp;|&nbsp;
+         <strong>Remaining:</strong> <span style="color:var(--accent3);font-weight:700;">${batch.remainingQty} cft</span>`;
+      document.getElementById('batch-info').className = 'info-box success';
+    } catch {
+      document.getElementById('batch-info').textContent = '⚠️ Batch not found or backend offline.';
+      document.getElementById('batch-info').className = 'info-box';
+    }
+  }
+
+  async function buyWood() {
+    if (!walletData) { walletData = await connectWallet(); if (!walletData) return; }
+
+    const lotId = parseInt(document.getElementById('lot-id').value);
+    const qty   = parseInt(document.getElementById('buy-qty').value);
+    if (!lotId || !qty || qty <= 0) {
+      showStatus('buy-status', 'error', 'Enter a valid Lot ID and quantity > 0.');
+      return;
+    }
+
+    const btn = document.getElementById('buy-btn');
+    btn.disabled = true; btn.textContent = '⏳ Sending to MetaMask...';
+    showStatus('buy-status', 'loading', 'Confirm the transaction in MetaMask...');
+
+    try {
+      const contract = getContract(walletData.signer);
+      const tx = await contract.purchaseWood(BigInt(lotId), BigInt(qty));
+      showStatus('buy-status', 'loading', `⏳ Tx: ${tx.hash.slice(0,14)}… Waiting for confirmation...`);
+      await tx.wait();
+      showStatus('buy-status', 'success',
+        `✅ Wood purchased! Batch created. Tx: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="color:var(--accent2)">${tx.hash.slice(0,14)}…</a>`);
+      setTimeout(loadMyBatches, 3000);
+    } catch (err) {
+      let msg = err.message;
+      if (err.code === 4001) msg = 'Transaction rejected.';
+      else if (msg.includes('missing role')) msg = 'This wallet does not have FACTORY_ROLE.';
+      else if (msg.includes('Insufficient lot')) msg = 'Not enough remaining quantity in that lot.';
+      showStatus('buy-status', 'error', '❌ ' + msg);
+    }
+    btn.disabled = false; btn.textContent = '🔗 Buy Wood (MetaMask)';
+  }
+
+  function handleFurnFile(input) {
+    if (input.files && input.files[0]) {
+      furnFile = input.files[0];
+      document.getElementById('furn-file-name').textContent = '📎 ' + furnFile.name;
+      document.getElementById('furn-jwt-section').style.display = 'block';
+      document.getElementById('furn-upload-btn').style.display = 'inline-flex';
+      furnCID = '';
+      document.getElementById('furn-ipfs-status').classList.remove('show');
+    }
+  }
+
+  async function uploadFurnFile() {
+    if (!furnFile) return;
+    const jwt = document.getElementById('furn-pinata-jwt').value.trim();
+    if (!jwt) { showStatus('make-status', 'error', 'Enter your Pinata JWT.'); return; }
+
+    const btn = document.getElementById('furn-upload-btn');
+    btn.disabled = true; btn.textContent = '⏳ Uploading...';
+    showStatus('make-status', 'loading', 'Uploading to IPFS...');
+
+    try {
+      furnCID = await uploadToPinata(furnFile, jwt);
+      document.getElementById('furn-ipfs-cid').textContent = furnCID;
+      document.getElementById('furn-ipfs-status').classList.add('show');
+      showStatus('make-status', 'success', `✅ Uploaded! CID: ${furnCID}`);
+      btn.textContent = '✅ Uploaded';
+    } catch (err) {
+      showStatus('make-status', 'error', 'IPFS upload failed: ' + err.message);
+      btn.disabled = false; btn.textContent = '📤 Upload to IPFS First';
+    }
+  }
+
+  async function createFurniture() {
+    if (!walletData) { walletData = await connectWallet(); if (!walletData) return; }
+
+    const batchId = parseInt(document.getElementById('batch-id').value);
+    const fType   = document.getElementById('furn-type').value;
+    const qty     = parseInt(document.getElementById('furn-qty').value);
+
+    if (!batchId || !qty || qty <= 0) {
+      showStatus('make-status', 'error', 'Enter a valid Batch ID and quantity > 0.');
+      return;
+    }
+    if (furnFile && !furnCID) {
+      showStatus('make-status', 'error', '⚠️ File selected but not uploaded to IPFS yet. Click "Upload to IPFS First".');
+      return;
+    }
+
+    const ipfsHash = furnCID || '';
+    const btn = document.getElementById('make-btn');
+    btn.disabled = true; btn.textContent = '⏳ Sending to MetaMask...';
+    showStatus('make-status', 'loading', 'Confirm in MetaMask...');
+
+    try {
+      const contract = getContract(walletData.signer);
+      const tx = await contract.createFurniture(BigInt(batchId), fType, BigInt(qty), ipfsHash);
+      showStatus('make-status', 'loading', `⏳ Tx: ${tx.hash.slice(0,14)}… Waiting...`);
+      await tx.wait();
+      showStatus('make-status', 'success',
+        `✅ Furniture created! Tx: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="color:var(--accent2)">${tx.hash.slice(0,14)}…</a><br>QR code will appear on the dashboard after the listener processes the event.`);
+      furnFile = null; furnCID = '';
+      document.getElementById('furn-file-name').textContent = '';
+      document.getElementById('furn-ipfs-status').classList.remove('show');
+      document.getElementById('furn-upload-btn').style.display = 'none';
+      document.getElementById('furn-jwt-section').style.display = 'none';
+    } catch (err) {
+      let msg = err.message;
+      if (err.code === 4001) msg = 'Transaction rejected.';
+      else if (msg.includes('Not batch owner')) msg = 'You are not the owner of this batch.';
+      else if (msg.includes('Insufficient batch')) msg = 'Not enough remaining quantity in this batch.';
+      showStatus('make-status', 'error', '❌ ' + msg);
+    }
+    btn.disabled = false; btn.textContent = '🔗 Create Furniture (MetaMask)';
+  }
+
+  async function loadMyBatches() {
+    const tbody = document.getElementById('batches-tbody');
+    if (!walletData) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Connect wallet first.</td></tr>'; return; }
+
+    try {
+      const batches = await apiGetBatchesByFactory(walletData.address);
+      if (batches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">No batches for this wallet yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = batches.map(b => `
+        <tr>
+          <td><span class="pill pill-blue">#${b.batchId}</span></td>
+          <td>#${b.parentLotId}</td>
+          <td>${b.qty}</td>
+          <td><strong style="color:var(--accent3)">${b.remainingQty}</strong></td>
+          <td><button class="btn" style="padding:4px 12px;font-size:0.75rem;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;" onclick="prefillBatch(${b.batchId})">Use →</button></td>
+        </tr>`).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:2rem;">Backend offline.</td></tr>';
+    }
+  }
+
+  function prefillBatch(id) {
+    switchTab('make');
+    document.getElementById('batch-id').value = id;
+    fetchBatchInfo();
+  }
+
+  function showStatus(id, type, html) {
+    const el = document.getElementById(id);
+    el.className = 'status-msg show ' + type;
+    el.innerHTML = html;
+  }
+</script>
+</body>
+</html>

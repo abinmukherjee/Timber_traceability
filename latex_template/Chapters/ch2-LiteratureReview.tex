@@ -1,0 +1,179 @@
+\chapter{Literature Review}
+\label{ch2-LiteratureReview}
+
+Using blockchain to trace goods through a supply chain is not a new idea.
+Over the last few years researchers have tried it in a number of areas,
+from food and medicine to forestry and factory manufacturing. We went
+through ten of these earlier works before we started building
+\emph{TimberTrace}. Some are published research papers and some are
+open-source projects that other developers have put on GitHub. We did not
+just read them for background; in each one we looked for a particular idea
+worth borrowing. Sometimes we used the idea more or less as it was, other
+times we changed it to fit timber, and in a few cases we decided a simpler
+option made more sense for a student prototype. The rest of this chapter
+goes through these works one by one and points out exactly which design
+choice in our own project each of them shaped.
+
+\section{Survey of Related Work}
+
+The work closest to ours is by Figorilli et al.~\cite{figorilli2018wood}.
+As far as we know, it was the first published attempt to trace wood
+electronically across the whole supply chain using a blockchain. They put
+RFID tags on the logs and wrote each scan to an immutable ledger, so the
+physical wood and its digital record stayed linked. Westerkamp et
+al.~\cite{westerkamp2018token} looked at the problem from a different
+angle. In their ``token-recipe'' model, making a product means using up
+the tokens that stand for its raw materials and creating a new token for
+the finished item, which keeps the link between inputs and outputs on the
+chain itself. Two more projects helped shape the consumer-facing side of
+our work: the SCTS system~\cite{scts} let anyone check a product's history
+by scanning a QR code, and the \verb|trace| dApp~\cite{trace} went a step
+further by attaching signed certificates from trusted experts to each
+product. A third, \verb|smart-traceability|~\cite{smarttraceability},
+showed a neat way to handle large files by keeping the batch data on IPFS
+and storing only its hash on-chain.
+
+A second group of works deals mainly with who is allowed to do what.
+PharmaChain~\cite{pharmachain} and the dual-contract design in
+Ref.~\cite{dualcontract} both handle roles carefully; the latter even
+splits the data and the permission logic into separate contracts so the
+rules can be updated without disturbing the stored records. The dApp in
+Ref.~\cite{faizack} treats the supply chain as a set of fixed stages that
+a product can only move forward through, with role checks guarding each
+step. Finally, two studies made us think harder about which blockchain to
+build on. The Hyperledger Fabric system in Ref.~\cite{hyperledger} showed
+what a permissioned, enterprise-grade network can do, and the recent
+timber-focused framework in Ref.~\cite{timberSC2025} added something we
+had overlooked, treating the transfer of ownership as its own recorded
+action on the chain rather than just another event.
+
+\section{Comparative Summary}
+
+Table~\ref{tab:litreview} consolidates the survey, listing each
+paper/project alongside the specific idea we carried into
+\emph{TimberTrace}.
+
+\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{|c|p{5.1cm}|p{6.6cm}|}
+  \caption{Literature reviewed and the idea adopted in this project.}
+  \label{tab:litreview} \\
+  \hline
+  \textbf{Sl.\ No.} & \textbf{Paper / Project Name} & \textbf{Idea Used in My Project} \\
+  \hline
+  \endfirsthead
+
+  \multicolumn{3}{c}%
+  {\tablename\ \thetable\ -- \textit{continued from previous page}} \\
+  \hline
+  \textbf{Sl.\ No.} & \textbf{Paper / Project Name} & \textbf{Idea Used in My Project} \\
+  \hline
+  \endhead
+
+  \hline
+  \multicolumn{3}{r}{\textit{continued on next page}} \\
+  \endfoot
+
+  \hline
+  \endlastfoot
+
+  1 & Figorilli et al. (2018), ``A Blockchain Implementation Prototype
+  for the Electronic Open Source Traceability of Wood along the Whole
+  Supply Chain,'' \emph{Sensors}, MDPI~\cite{figorilli2018wood} &
+  Recording every physical handoff of the wood (harvest $\rightarrow$
+  lot $\rightarrow$ batch $\rightarrow$ furniture) as an immutable,
+  tamper-proof on-chain event, so the ledger is a permanent provenance
+  record of each stage. \\
+  \hline
+
+  2 & Westerkamp, Victor \& K\"upper (2018), ``Blockchain-based Supply
+  Chain Traceability: Token Recipes Model Manufacturing
+  Processes,'' IEEE Blockchain~\cite{westerkamp2018token} &
+  The input-consumed-to-output manufacturing model, realised as our
+  UTXO-inspired mass-balance rule in which a Lot is consumed to create a
+  Batch and a Batch to create Furniture, preserving the input--output
+  link on-chain. \\
+  \hline
+
+  3 & SCTS --- Supply Chain Tracking System (AtrauraBlockchain,
+  GitHub)~\cite{scts} &
+  Placing a QR code on the physical product that resolves its full
+  on-chain history, enabling anyone to audit provenance without special
+  access --- our \texttt{/verify} QR flow. \\
+  \hline
+
+  4 & \texttt{maximevaillancourt/trace} --- certification dApp
+  (GitHub)~\cite{trace} &
+  Attaching signed certificates to products; we store a certificate
+  IPFS CID inside the Lot and Furniture records as a lightweight
+  certification layer over the provenance data. \\
+  \hline
+
+  5 & \texttt{ecobioca/smart-traceability} (GitHub)~\cite{smarttraceability} &
+  Storing all bulky batch/product metadata (certificates, product
+  images) off-chain on IPFS via Pinata and keeping only the content
+  hash on-chain to save storage and gas. \\
+  \hline
+
+  6 & PharmaChain (Bapatla et al., 2022), \emph{IET
+  Networks}~\cite{pharmachain} &
+  Role-based access control enforced through Solidity function
+  modifiers --- our \texttt{AUCTION\_HOUSE\_ROLE} and
+  \texttt{FACTORY\_ROLE} guarded by OpenZeppelin's
+  \texttt{onlyRole()}, with the admin granting/revoking roles. \\
+  \hline
+
+  7 & Dual-Contract Architecture with RBAC (2025), \emph{Scientific
+  Reports}~\cite{dualcontract} &
+  Separation of concerns between authoritative logic and data ---
+  reflected in our decoupling of the authoritative smart contract (source
+  of truth) from the read-optimised PostgreSQL mirror, and noted as a
+  future dual-contract upgrade path. \\
+  \hline
+
+  8 & \texttt{faizack/Supply-Chain-Blockchain} (GitHub)~\cite{faizack} &
+  Modelling the supply chain as defined, role-gated stages with a
+  dedicated contract function for each transition
+  (\texttt{registerLot}, \texttt{purchaseWood},
+  \texttt{createFurniture}). \\
+  \hline
+
+  9 & High-Efficiency Blockchain-Based Supply Chain Traceability
+  (Hyperledger Fabric, 2022)~\cite{hyperledger} &
+  Throughput comparison of permissioned vs.\ public ledgers, which
+  informed our deliberate choice of public Ethereum Sepolia for the
+  prototype and identified Hyperledger as the future scaling path. \\
+  \hline
+
+  10 & Blockchain-Enabled Smart Contracts for Secure Timber
+  Traceability (2025), ScienceDirect~\cite{timberSC2025} &
+  On-chain ownership tracking (the \texttt{owner} field on each Lot,
+  Batch and Furniture) together with QR-based consumer verification of
+  the harvested-and-certified timber. \\
+  \hline
+
+\end{longtable}
+\renewcommand{\arraystretch}{1.0}
+
+\section{Research Gap}
+
+Across the surveyed works, three consistent trade-offs emerge. First,
+hardware-driven systems~\cite{figorilli2018wood} achieve automation at the
+cost of expensive IoT infrastructure, whereas a software-only,
+operator-signed model is more appropriate for a research prototype.
+Second, token-heavy representations~\cite{westerkamp2018token,
+smarttraceability} and per-product contracts~\cite{scts} offer flexibility
+but at higher gas cost and reduced auditability compared with a single
+monolithic contract using struct linkage. Third, enterprise permissioned
+ledgers~\cite{hyperledger} provide superior throughput but demand
+self-operated infrastructure. \emph{TimberTrace} occupies the gap between
+these extremes: a software-only, single-contract Ethereum system that
+enforces a mass-balance conservation invariant on-chain, mirrors state to
+a fast read database off-chain, and exposes QR-based public verification
+--- combining the most relevant ideas from the literature into a
+lightweight, auditable timber-provenance prototype.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../mainrep"
+%%% End:

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimberTrace — Admin Role Management</title>
+  <meta name="description" content="Admin portal for managing blockchain role assignments in the TimberTrace supply chain system." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1e; --surface: #111827; --surface2: #1a2235;
+      --border: #1e293b; --accent: #22c55e; --accent2: #3b82f6; --accent4: #8b5cf6;
+      --text: #e2e8f0; --muted: #64748b; --danger: #ef4444; --radius: 12px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    nav { background: rgba(17,24,39,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: var(--accent); text-decoration: none; }
+    .nav-brand span { color: var(--text); }
+    .nav-links { display: flex; gap: 0.25rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; padding: 6px 14px; border-radius: 8px; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--accent4); }
+    .chain-badge { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+    .page-header { padding: 3rem 2rem 0; max-width: 1000px; margin: 0 auto; }
+    .page-header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .page-header p { color: var(--muted); }
+
+    main { max-width: 1000px; margin: 2rem auto; padding: 0 2rem; }
+
+    /* Warning banner */
+    .admin-warning {
+      background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.25);
+      border-radius: var(--radius); padding: 1rem 1.5rem;
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      margin-bottom: 2rem; font-size: 0.875rem;
+    }
+    .admin-warning .icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
+    .admin-warning strong { color: var(--accent4); }
+
+    /* Grant/revoke grid */
+    .role-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; }
+    .form-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+    label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; font-family: inherit; width: 100%; transition: border-color 0.2s; }
+    input:focus, select:focus { outline: none; border-color: var(--accent4); }
+    input::placeholder { color: var(--muted); }
+    select option { background: var(--surface2); }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 10px; border: none; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; width: 100%; margin-top: 0.25rem; }
+    .btn-grant  { background: rgba(34,197,94,0.15);  color: var(--accent); border: 1px solid rgba(34,197,94,0.3); }
+    .btn-grant:hover  { background: rgba(34,197,94,0.25); }
+    .btn-revoke { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .btn-revoke:hover { background: rgba(239,68,68,0.22); }
+    .btn-connect { background: var(--accent2); color: white; border: none; }
+    .btn-connect:hover { background: #2563eb; }
+    .btn-connect.connected { background: rgba(34,197,94,0.15); color: var(--accent); border: 1px solid rgba(34,197,94,0.3); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Status */
+    .status-msg { display: none; padding: 0.875rem 1.25rem; border-radius: 8px; font-size: 0.8rem; margin-top: 0.75rem; line-height: 1.5; }
+    .status-msg.show { display: block; }
+    .status-msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+    .status-msg.error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
+    .status-msg.loading { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; }
+
+    /* Flow diagram */
+    .flow-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 2rem; font-size: 0.8rem; color: var(--muted); line-height: 1.8; }
+    .flow-diagram strong { color: var(--text); }
+
+    /* Roles table */
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .table-header h2 { font-size: 1rem; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--surface2); }
+    th { padding: 0.75rem 1.25rem; text-align: left; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    td { padding: 0.875rem 1.25rem; font-size: 0.875rem; border-top: 1px solid var(--border); }
+    tr:hover td { background: rgba(255,255,255,0.015); }
+    .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .pill-green  { background: rgba(34,197,94,0.1);  color: #22c55e; }
+    .pill-blue   { background: rgba(59,130,246,0.1); color: #60a5fa; }
+    .pill-amber  { background: rgba(245,158,11,0.1); color: #fbbf24; }
+    .pill-purple { background: rgba(139,92,246,0.1); color: #a78bfa; }
+    .pill-red    { background: rgba(239,68,68,0.1);  color: #f87171; }
+
+    .btn-sm { padding: 4px 12px; font-size: 0.75rem; width: auto; margin: 0; border-radius: 6px; }
+
+    /* Role hash info */
+    .hash-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-size: 0.75rem; font-family: monospace; color: var(--muted); margin-top: 1rem; }
+    .hash-card .hash-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
+    .hash-card .hash-name { color: var(--text); font-weight: 600; flex-shrink: 0; }
+
+    @media (max-width: 640px) { .role-actions { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">🌲 <span>TimberTrace</span></a>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="auction.html">Auction House</a>
+    <a href="factory.html">Factory</a>
+    <a href="verify.html">Verify</a>
+    <a href="admin.html" class="active">Admin</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <span class="chain-badge">⬡ Sepolia</span>
+    <button class="btn btn-connect" id="connect-btn" onclick="handleConnect()" style="width:auto;margin:0;padding:0.5rem 1.25rem;">Connect Wallet</button>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>⚙️ Admin — Role Management</h1>
+  <p>Grant or revoke Auction House and Factory roles. Only the deployer wallet (DEFAULT_ADMIN_ROLE) can do this.</p>
+</div>
+
+<main>
+  <div id="wallet-error" class="status-msg error"></div>
+
+  <!-- Flow info -->
+  <div class="admin-warning">
+    <span class="icon">🔐</span>
+    <div>
+      <strong>How it works:</strong> The backend returns the role hash → you sign the <code>grantRole()</code> or <code>revokeRole()</code> transaction in MetaMask → the blockchain emits a <code>RoleGranted/RoleRevoked</code> event → the event listener automatically mirrors the change to the database. <strong>No private key is ever stored server-side.</strong>
+    </div>
+  </div>
+
+  <!-- Grant + Revoke side by side -->
+  <div class="role-actions">
+    <!-- Grant -->
+    <div class="form-card">
+      <h2>🔑 Grant Role</h2>
+      <div class="form-group">
+        <label for="grant-wallet">Target Wallet Address</label>
+        <input id="grant-wallet" type="text" placeholder="0x..." />
+      </div>
+      <div class="form-group">
+        <label for="grant-role">Role to Grant</label>
+        <select id="grant-role">
+          <option value="AUCTION_HOUSE">Auction House</option>
+          <option value="FACTORY">Factory</option>
+        </select>
+      </div>
+      <button class="btn btn-grant" id="grant-btn" onclick="grantRole()">✅ Grant Role via MetaMask</button>
+      <div class="status-msg" id="grant-status"></div>
+    </div>
+
+    <!-- Revoke -->
+    <div class="form-card">
+      <h2>🚫 Revoke Role</h2>
+      <div class="form-group">
+        <label for="revoke-wallet">Target Wallet Address</label>
+        <input id="revoke-wallet" type="text" placeholder="0x..." />
+      </div>
+      <div class="form-group">
+        <label for="revoke-role">Role to Revoke</label>
+        <select id="revoke-role">
+          <option value="AUCTION_HOUSE">Auction House</option>
+          <option value="FACTORY">Factory</option>
+        </select>
+      </div>
+      <button class="btn btn-revoke" id="revoke-btn" onclick="revokeRole()">❌ Revoke Role via MetaMask</button>
+      <div class="status-msg" id="revoke-status"></div>
+    </div>
+  </div>
+
+  <!-- Role hash reference -->
+  <div class="hash-card" style="margin-bottom:2rem;">
+    <div style="color:var(--muted);margin-bottom:0.5rem;">Role hash reference (keccak256, matches contract constants):</div>
+    <div class="hash-row"><span class="hash-name">AUCTION_HOUSE_ROLE</span> <span>0x89b57a644ed9fce05f6c753cf42a08c2333c48e5a3d803e17cee19087358722b</span></div>
+    <div class="hash-row"><span class="hash-name">FACTORY_ROLE</span> <span>0xdfbefbf47cfe66b701d8cfdbce1de81c821590819cb07e71cb01b6602fb0ee27</span></div>
+    <div class="hash-row"><span class="hash-name">DEFAULT_ADMIN_ROLE</span> <span>0x0000000000000000000000000000000000000000000000000000000000000000</span></div>
+  </div>
+
+  <!-- Role assignments table -->
+  <div class="table-card">
+    <div class="table-header">
+      <h2>Current Role Assignments</h2>
+      <button class="btn btn-sm" onclick="loadRoles()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:5px 14px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:500;">↻ Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Wallet</th>
+          <th>Role</th>
+          <th>Granted By</th>
+          <th>Status</th>
+          <th>Tx Hash</th>
+          <th>Quick Action</th>
+        </tr>
+      </thead>
+      <tbody id="roles-tbody">
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading roles...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script src="js/contract-config.js"></script>
+<script src="js/wallet.js"></script>
+<script src="js/api.js"></script>
+<script>
+  let walletData = null;
+
+  async function handleConnect() {
+    walletData = await connectWallet();
+    if (walletData) {
+      document.getElementById('connect-btn').textContent = '✓ ' + shortenAddress(walletData.address);
+      document.getElementById('connect-btn').classList.add('connected');
+    }
+  }
+
+  /**
+   * Reads on-chain whether an address already holds AUCTION_HOUSE_ROLE or
+   * FACTORY_ROLE. Roles are mutually exclusive — the contract's grantRole()
+   * override enforces this too, so this is a UX pre-check, not the real
+   * security boundary. Returns the existing role name, or null.
+   */
+  async function checkExistingRole(wallet) {
+    const contract = getContract(walletData.signer);
+    const [auctionHash, factoryHash] = await Promise.all([
+      contract.AUCTION_HOUSE_ROLE(),
+      contract.FACTORY_ROLE(),
+    ]);
+    const [hasAuction, hasFactory] = await Promise.all([
+      contract.hasRole(auctionHash, wallet),
+      contract.hasRole(factoryHash, wallet),
+    ]);
+    if (hasAuction) return 'AUCTION_HOUSE';
+    if (hasFactory) return 'FACTORY';
+    return null;
+  }
+
+  async function grantRole() {
+    if (!walletData) { walletData = await connectWallet(); if (!walletData) return; }
+
+    const wallet = document.getElementById('grant-wallet').value.trim();
+    const role   = document.getElementById('grant-role').value;
+    if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
+      showStatus('grant-status', 'error', 'Enter a valid 42-character Ethereum address (0x...).');
+      return;
+    }
+
+    const btn = document.getElementById('grant-btn');
+    btn.disabled = true; btn.textContent = '⏳ Checking existing roles...';
+    showStatus('grant-status', 'loading', 'Checking on-chain roles for this address...');
+
+    try {
+      const existingRole = await checkExistingRole(wallet);
+      if (existingRole) {
+        showStatus('grant-status', 'error',
+          `❌ This address already holds the ${existingRole} role. Revoke it first, then grant the new role. ` +
+          `The revoke form has been pre-filled for you.`);
+        prefillRevoke(wallet, existingRole);
+        btn.disabled = false; btn.textContent = '✅ Grant Role via MetaMask';
+        return;
+      }
+
+      btn.textContent = '⏳ Preparing...';
+      showStatus('grant-status', 'loading', 'Fetching role hash from backend...');
+
+      // Step 1: Get role hash from backend
+      const { roleHash } = await apiPrepareGrant(wallet, role);
+
+      showStatus('grant-status', 'loading', `Role hash: ${roleHash.slice(0,18)}…\nSending to MetaMask for signing...`);
+      btn.textContent = '⏳ Confirm in MetaMask...';
+
+      // Step 2: Call grantRole() via MetaMask
+      const contract = getContract(walletData.signer);
+      const tx = await contract.grantRole(roleHash, wallet);
+
+      showStatus('grant-status', 'loading', `⏳ Tx: ${tx.hash.slice(0,14)}… Waiting for confirmation...`);
+      await tx.wait();
+
+      // Step 3: Event listener will auto-update DB via RoleGranted event
+      showStatus('grant-status', 'success',
+        `✅ ${role} role granted to ${wallet.slice(0,8)}…!\n` +
+        `Tx: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="color:var(--accent2)">${tx.hash.slice(0,18)}…</a>\n` +
+        `The database will update automatically via the event listener.`);
+
+      document.getElementById('grant-wallet').value = '';
+      setTimeout(loadRoles, 4000);
+
+    } catch (err) {
+      let msg = err.message;
+      if (err.code === 4001) msg = 'Transaction rejected by user.';
+      else if (msg.includes('missing role')) msg = 'Connected wallet does not have DEFAULT_ADMIN_ROLE.';
+      else if (msg.includes('already holds a supply-chain role')) msg = 'This address already holds a role. Revoke it first, then grant the new role.';
+      showStatus('grant-status', 'error', '❌ ' + msg);
+    }
+    btn.disabled = false; btn.textContent = '✅ Grant Role via MetaMask';
+  }
+
+  async function revokeRole() {
+    if (!walletData) { walletData = await connectWallet(); if (!walletData) return; }
+
+    const wallet = document.getElementById('revoke-wallet').value.trim();
+    const role   = document.getElementById('revoke-role').value;
+    if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
+      showStatus('revoke-status', 'error', 'Enter a valid 42-character Ethereum address.');
+      return;
+    }
+
+    const btn = document.getElementById('revoke-btn');
+    btn.disabled = true; btn.textContent = '⏳ Preparing...';
+    showStatus('revoke-status', 'loading', 'Fetching role hash from backend...');
+
+    try {
+      const { roleHash } = await apiPrepareRevoke(wallet, role);
+
+      showStatus('revoke-status', 'loading', 'Sending to MetaMask...');
+      btn.textContent = '⏳ Confirm in MetaMask...';
+
+      const contract = getContract(walletData.signer);
+      const tx = await contract.revokeRole(roleHash, wallet);
+
+      showStatus('revoke-status', 'loading', `⏳ Tx: ${tx.hash.slice(0,14)}… Waiting...`);
+      await tx.wait();
+
+      showStatus('revoke-status', 'success',
+        `✅ ${role} role revoked from ${wallet.slice(0,8)}…!\n` +
+        `Tx: <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank" style="color:var(--accent2)">${tx.hash.slice(0,18)}…</a>`);
+
+      document.getElementById('revoke-wallet').value = '';
+      setTimeout(loadRoles, 4000);
+
+    } catch (err) {
+      let msg = err.message;
+      if (err.code === 4001) msg = 'Transaction rejected by user.';
+      else if (msg.includes('missing role')) msg = 'Connected wallet does not have DEFAULT_ADMIN_ROLE.';
+      showStatus('revoke-status', 'error', '❌ ' + msg);
+    }
+    btn.disabled = false; btn.textContent = '❌ Revoke Role via MetaMask';
+  }
+
+  function prefillRevoke(wallet, role) {
+    document.getElementById('revoke-wallet').value = wallet;
+    document.getElementById('revoke-role').value   = role;
+    document.getElementById('revoke-wallet').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function loadRoles() {
+    const tbody = document.getElementById('roles-tbody');
+    try {
+      const roles = await apiGetRoles();
+      if (roles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No roles assigned yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = roles.map(r => {
+        const pillClass = r.active ? 'pill-green' : 'pill-red';
+        const roleClass = r.roleName === 'AUCTION_HOUSE' ? 'pill-blue' :
+                          r.roleName === 'FACTORY'        ? 'pill-amber' : 'pill-purple';
+        const quickRevoke = r.active
+          ? `<button onclick="prefillRevoke('${r.wallet}','${r.roleName}')" class="btn-sm" style="background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:3px 10px;font-size:0.72rem;cursor:pointer;font-family:inherit;font-weight:500;">Revoke</button>`
+          : '—';
+        return `
+          <tr>
+            <td style="font-family:monospace;font-size:0.75rem;" title="${r.wallet}">${shortenAddr(r.wallet)}</td>
+            <td><span class="pill ${roleClass}">${r.roleName}</span></td>
+            <td style="font-family:monospace;font-size:0.75rem;" title="${r.grantedBy}">${shortenAddr(r.grantedBy)}</td>
+            <td><span class="pill ${pillClass}">${r.active ? 'Active' : 'Revoked'}</span></td>
+            <td style="font-family:monospace;font-size:0.75rem;">${r.txHash ? `<a href="https://sepolia.etherscan.io/tx/${r.txHash}" target="_blank" style="color:var(--accent2);">${r.txHash.slice(0,10)}…</a>` : '—'}</td>
+            <td>${quickRevoke}</td>
+          </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:2rem;">Backend offline.</td></tr>';
+    }
+  }
+
+  function showStatus(id, type, html) {
+    const el = document.getElementById(id);
+    el.className = 'status-msg show ' + type;
+    el.innerHTML = html.replace(/\n/g, '<br>');
+  }
+
+  loadRoles();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Environment variables (contain secrets — never commit)
+.env
+contracts/.env
+listener/.env
+
+# Node
+node_modules/
+contracts/node_modules/
+listener/node_modules/
+
+# Hardhat
+contracts/artifacts/
+contracts/cache/
+
+# Java / Maven
+backend/target/
+
+# QR code output
+qr-codes/
+
+# OS
+.DS_Store
+Thumbs.db
