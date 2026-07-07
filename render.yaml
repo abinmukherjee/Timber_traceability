@@ -32,7 +32,7 @@ services:
     name: timber-listener
     runtime: docker
     dockerfilePath: ./listener/Dockerfile
-    dockerContext: ./listener
+    dockerContext: .
     plan: free
     healthCheckPath: /
     envVars:
