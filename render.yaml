@@ -2,7 +2,7 @@ databases:
   - name: timber-postgres
     plan: free
     databaseName: timber_db
-    user: postgres
+    user: timber_user
 
 services:
   - type: web
